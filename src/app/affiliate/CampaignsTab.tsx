@@ -113,10 +113,10 @@ export default function CampaignsTab({
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reward Type
+                  Reward Pending
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duration
+                  Reward Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Revenue
@@ -133,8 +133,13 @@ export default function CampaignsTab({
               {campaigns.map((campaign) => (
                 <tr key={campaign.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {campaign.campaignName}
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {campaign.campaignName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {campaign.startDate} - {campaign.endDate || "X"}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -150,16 +155,16 @@ export default function CampaignsTab({
                       {campaign.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {getRewardTypeText(campaign.rewardRecipients)}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    {campaign.rewardPending || "0"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {campaign.startDate} - {campaign.endDate || "-"}
+                    {campaign.rewardType}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     ₹0.00
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     0
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -256,7 +261,7 @@ export default function CampaignsTab({
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-2">Reward Type</h3>
-                  <p>{getRewardTypeText(viewingCampaign.rewardRecipients)}</p>
+                  <p>{viewingCampaign.rewardType}</p>
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-2">Duration</h3>

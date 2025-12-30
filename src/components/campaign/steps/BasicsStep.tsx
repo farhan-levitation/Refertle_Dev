@@ -26,7 +26,8 @@ export default function BasicsStep({ formData, onChange }: BasicsStepProps) {
             name="campaignName"
             value={formData.campaignName}
             onChange={onChange}
-            className="mt-1 py-2 pl-4 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Enter campaign name"
+            className="mt-1 py-2 pl-4 border block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             required
           />
         </div>
@@ -43,7 +44,7 @@ export default function BasicsStep({ formData, onChange }: BasicsStepProps) {
             name="status"
             value={formData.status}
             onChange={onChange}
-            className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+            className="mt-1 block w-full border rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
             required
           >
             <option value="draft">Draft</option>
@@ -68,7 +69,7 @@ export default function BasicsStep({ formData, onChange }: BasicsStepProps) {
               name="startDate"
               value={formData.startDate}
               onChange={onChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full border p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               required
             />
           </div>
@@ -86,7 +87,7 @@ export default function BasicsStep({ formData, onChange }: BasicsStepProps) {
               name="endDate"
               value={formData.endDate}
               onChange={onChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full border p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               min={formData.startDate}
             />
           </div>

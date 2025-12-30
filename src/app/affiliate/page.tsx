@@ -6,7 +6,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { FormData } from "@/components/campaign";
+import Link from "next/link";
 const CampaignsTab = dynamic(() => import("./CampaignsTab"), { ssr: false });
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface AffiliateStats {
   totalEarnings: number;
@@ -31,6 +44,15 @@ interface Referral {
   commission?: number;
 }
 
+interface Campaign {
+  id: string;
+  campaignName: string;
+  status: "Active" | "Paused" | "Completed" | "Draft";
+  revenue: number;
+  conversions: number;
+  // Add other campaign properties as needed
+}
+
 interface Payout {
   id: string;
   amount: number;
@@ -47,14 +69,126 @@ function DashboardPage({
 }: {
   stats: AffiliateStats | null;
   referrals: Referral[];
+  campaigns: Campaign[];
 }) {
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
+    null
+  );
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const handleViewCampaign = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setIsViewModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedCampaign(null);
+  };
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
 
+  // Get and filter active campaigns from local storage
+  const campaignsFromStorage = localStorage.getItem("refferq_campaigns");
+  console.log("Raw campaigns from storage:", campaignsFromStorage);
+
+  const localCampaigns: Campaign[] = campaignsFromStorage
+    ? JSON.parse(campaignsFromStorage)
+    : [];
+  console.log("Parsed campaigns:", localCampaigns);
+
+  const activeCampaigns = localCampaigns.filter(
+    (campaign) => campaign.status.toLowerCase() === "active"
+  );
+  console.log("Active campaigns:", activeCampaigns);
+
+  const handleDeleteCampaign = () => {
+    if (!selectedCampaign) return;
+
+    // Get current campaigns from local storage
+    const currentCampaigns = JSON.parse(
+      localStorage.getItem("refferq_campaigns") || "[]"
+    );
+
+    // Filter out the campaign to be deleted
+    const updatedCampaigns = currentCampaigns.filter(
+      (campaign: Campaign) => campaign.id !== selectedCampaign.id
+    );
+
+    // Update local storage
+    localStorage.setItem("refferq_campaigns", JSON.stringify(updatedCampaigns));
+
+    // Close the modal and refresh the campaigns
+    closeModal();
+    window.location.reload(); // This will refresh the page to show updated campaigns
+  };
+
+  // Sample data - replace with your actual data
+  const referralData = [
+    { date: "Jan", clicks: 4000, conversions: 2400 },
+    { date: "Feb", clicks: 3000, conversions: 1398 },
+    { date: "Mar", clicks: 2000, conversions: 9800 },
+    { date: "Apr", clicks: 2780, conversions: 3908 },
+    { date: "May", clicks: 1890, conversions: 4800 },
+    { date: "Jun", clicks: 2390, conversions: 3800 },
+  ];
+
+  const campaignData = activeCampaigns.map((campaign) => {
+    // Safely handle missing or invalid campaign names
+    const campaignName =
+      typeof campaign.campaignName === "string" &&
+      campaign.campaignName.trim().length > 0
+        ? campaign.campaignName
+        : "Unnamed Campaign";
+
+    // Get the first word of the campaign name for the X-axis
+    const firstName = campaignName.split(" ")[0];
+    return {
+      // Short name for X-axis
+      name: firstName.charAt(0).toUpperCase() + firstName.slice(1),
+      // Full name for tooltip
+      fullName: campaignName,
+      revenue: campaign.revenue || 0,
+      conversions: campaign.conversions || 0,
+    };
+  });
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+          <p className="font-semibold">{data.fullName || label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color }}>
+              {entry.name}: {entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const monthlyData = [
+    { month: "Jan", revenue: 4000 },
+    { month: "Feb", revenue: 3000 },
+    { month: "Mar", revenue: 2000 },
+    { month: "Apr", revenue: 2780 },
+    { month: "May", revenue: 1890 },
+    { month: "Jun", revenue: 2390 },
+  ];
+
+  const funnelData = [
+    { stage: "Link Generated", value: 100 },
+    { stage: "Clicks", value: 200 },
+    { stage: "Purchases", value: 50 },
+    { stage: "Reward Issued", value: 50 },
+  ];
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -85,7 +219,7 @@ function DashboardPage({
           <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
             {stats?.totalClicks || 0}
           </p>
-          <p className="text-xs text-gray-400 mt-2">referals</p>
+          <p className="text-xs text-gray-400 mt-2">referrals</p>
         </div>
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
@@ -98,7 +232,7 @@ function DashboardPage({
             </div>
           </div>
           <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-            {stats?.totalCampaigns || 0}
+            {localCampaigns.length || 0}
           </p>
           <p className="text-xs text-gray-400 mt-2">campaigns</p>
         </div>
@@ -113,312 +247,587 @@ function DashboardPage({
             </div>
           </div>
           <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-            {stats?.activeCampaigns || 0}
+            {activeCampaigns.length || 0}
           </p>
           <p className="text-xs text-gray-400 mt-2">campaigns</p>
         </div>
       </div>
-
-      {/* Links Section */}
+      {/* Referral Funnel */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-5">
-          Your Referral Links
+          Referral Funnel
         </h3>
-
-        {!stats?.referralCode ? (
-          <div className="text-center py-10">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">🔗</span>
-            </div>
-            <p className="text-gray-600 mb-2 font-medium">
-              No referral code found
-            </p>
-            <p className="text-sm text-gray-400 mb-5">
-              Generate your referral code to start earning commissions
-            </p>
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch("/api/affiliate/generate-code", {
-                    method: "POST",
-                  });
-                  const data = await response.json();
-                  if (data.success) {
-                    window.location.reload();
-                  } else {
-                    alert("Failed to generate code: " + data.error);
-                  }
-                } catch (error) {
-                  console.error("Failed to generate code:", error);
-                  alert("Failed to generate code. Please try again.");
-                }
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 font-medium transition-all duration-300"
-            >
-              Generate Referral Code
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
-                Referral Link
-              </label>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  readOnly
-                  value={stats?.referralLink || ""}
-                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                />
-                <button
-                  onClick={() => copyToClipboard(stats?.referralLink || "")}
-                  className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 text-sm font-semibold transition-all duration-300"
+        <div className="flex items-center justify-between overflow-x-auto pb-2 -mx-2">
+          {[
+            { label: "Links generated", count: 100, color: "#f4f3ef" },
+            { label: "Clicks", count: 200, color: "#efeee8" },
+            { label: "Purchases", count: 50, color: "#eae8e0" },
+            { label: "Reward issued", count: 50, color: "#e5e3d9" },
+          ].map((item, index) => (
+            <div key={item.label} className="flex items-center justify-center ">
+              <div className="flex items-center justify-between w-full mx-2">
+                <div
+                  className="min-w-[230px] px-4 py-3 text-left rounded-lg border border-gray-100"
+                  style={{ backgroundColor: item.color }}
                 >
-                  Copy
-                </button>
+                  <div className="text-sm text-gray-600">{item.label}</div>
+                  <div className="text-lg font-bold text-gray-900">
+                    {item.count}
+                  </div>
+                </div>
+                {/* {index < 3 && (
+                  <div className=" text-gray-300 mx-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </div>
+                )} */}
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
-                Referral Code
-              </label>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  readOnly
-                  value={stats?.referralCode || ""}
-                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                />
-                <button
-                  onClick={() => copyToClipboard(stats?.referralCode || "")}
-                  className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 text-sm font-semibold transition-all duration-300"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
-      {/* Recent Referrals */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-5">
-          Recent Referrals
-        </h3>
-        {referrals.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">📋</span>
-            </div>
-            <p className="font-medium">No referrals yet</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Graph 1: Referral Performance Over Time (Line Graph) */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Referral Performance Over Time
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={referralData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="clicks"
+                  stroke="#10b981"
+                  name="Clicks"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="conversions"
+                  stroke="#3b82f6"
+                  name="Conversions"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/50">
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Value
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {referrals.slice(0, 5).map((ref) => (
+        </div>
+
+        {/* Graph 2: Campaign Performance (Column Graph) */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Campaign Performance
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={campaignData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar dataKey="revenue" fill="#10b981" name="Revenue (₹)" />
+                <Bar dataKey="conversions" fill="#3b82f6" name="Conversions" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Graph 3: Monthly Campaign Performance (Column Graph) */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Monthly Performance
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="revenue" fill="#10b981" name="Revenue (₹)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Graph 4: Funnel Stage Performance (Column Graph) */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Funnel Stage Performance
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={funnelData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="stage" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#8b5cf6" name="Count" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Active Campaigns */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 mb-6">
+        <div className="text-gray-900 mb-5 flex items-center justify-between">
+          <h3 className="text-lg font-bold">Active Campaigns</h3>
+          <button className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white rounded-lg px-4 py-2">
+            <Link href="/affiliate/createCampaign">Create Campaign</Link>
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50/50">
+                <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Revenue
+                </th>
+                <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Conversions
+                </th>
+                <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {activeCampaigns.length > 0 ? (
+                activeCampaigns.map((campaign: Campaign) => (
                   <tr
-                    key={ref.id}
+                    key={campaign.id}
                     className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors"
                   >
                     <td className="py-4 px-5 text-sm font-medium text-gray-900">
-                      {ref.leadName}
-                    </td>
-                    <td className="py-4 px-5 text-sm text-gray-500">
-                      {ref.leadEmail}
+                      {campaign.campaignName}
                     </td>
                     <td className="py-4 px-5">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          ref.status === "APPROVED"
+                          campaign.status === "Active"
                             ? "bg-emerald-100 text-emerald-700"
-                            : ref.status === "REJECTED"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-700"
+                            : campaign.status === "Paused"
+                              ? "bg-amber-100 text-amber-700"
+                              : campaign.status === "Completed"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-gray-100 text-gray-700"
                         }`}
                       >
-                        {ref.status}
+                        {campaign.status}
                       </span>
                     </td>
-                    <td className="py-4 px-5 text-sm text-gray-500">
-                      {new Date(ref.createdAt).toLocaleDateString()}
-                    </td>
                     <td className="py-4 px-5 text-sm font-semibold text-gray-900 text-right">
-                      ₹{(Number(ref.estimatedValue) || 0).toFixed(2)}
+                      ₹{campaign.revenue || 0}
+                    </td>
+                    <td className="py-4 px-5 text-sm text-gray-500 text-right">
+                      {campaign.conversions || 0}
+                    </td>
+                    <td className="py-4 px-5 text-right">
+                      <button
+                        className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
+                        onClick={() => handleViewCampaign(campaign)}
+                      >
+                        View
+                      </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center">
+                        <svg
+                          className="w-8 h-8 text-indigo-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
+                        </svg>
+                      </div>
+                      <p className="text-gray-600 font-medium">
+                        No active campaigns
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Your active campaigns will appear here
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <AnimatePresence>
+        {isViewModalOpen && selectedCampaign && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={closeModal}
+          >
+            <motion.div
+              className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {selectedCampaign.campaignName}
+                  </h3>
+                  <button
+                    onClick={closeModal}
+                    className="text-gray-400 hover:text-gray-500"
+                  >
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Status
+                      </p>
+                      <p className="mt-1 text-sm text-gray-900 capitalize">
+                        {selectedCampaign.status}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Revenue
+                      </p>
+                      <p className="mt-1 text-sm text-gray-900">
+                        ₹{selectedCampaign.revenue || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Conversions
+                      </p>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {selectedCampaign.conversions || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Campaign ID
+                      </p>
+                      <p className="mt-1 text-sm text-gray-900 font-mono">
+                        {selectedCampaign.id}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-8 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        confirm(
+                          "Are you sure you want to delete this campaign? This action cannot be undone."
+                        )
+                      ) {
+                        handleDeleteCampaign();
+                      }
+                    }}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 "
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
 
-// Referrals Page Component
-function ReferralsPage({
-  referrals,
-  onSubmitLead,
-}: {
-  referrals: Referral[];
-  onSubmitLead: () => void;
-}) {
-  const [activeTab, setActiveTab] = useState<"all" | "submitted">("all");
+// Rewards Page Component
+function RewardsPage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
 
-  const filteredReferrals =
-    activeTab === "submitted"
-      ? referrals.filter((r) => r.status === "PENDING")
-      : referrals;
+  const [rewardConfig, setRewardConfig] = useState(() => {
+    const savedConfig =
+      typeof window !== "undefined"
+        ? localStorage.getItem("rewardConfig")
+        : null;
+    return savedConfig
+      ? JSON.parse(savedConfig)
+      : { pointValue: 0.1, expiryDays: 30 };
+  });
+
+  useEffect(() => {
+    localStorage.setItem("rewardConfig", JSON.stringify(rewardConfig));
+  }, [rewardConfig]);
+  const handleRewardConfigSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDialogMessage("Reward settings saved successfully!");
+    setIsDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Referrals</h2>
-        <button
-          onClick={onSubmitLead}
-          className="px-5 py-2.5 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:shadow-lg hover:shadow-gray-900/20 font-medium flex items-center gap-2 transition-all duration-300"
-        >
-          <span className="text-lg">+</span>
-          <span>Submit lead</span>
-        </button>
+        <h2 className="text-2xl font-bold text-gray-900">Rewards</h2>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <div className="flex gap-6">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`pb-3 px-1 border-b-2 font-semibold text-sm transition-all ${
-              activeTab === "all"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            Referrals ({referrals.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("submitted")}
-            className={`pb-3 px-1 border-b-2 font-semibold text-sm transition-all ${
-              activeTab === "submitted"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            Submitted Leads (
-            {referrals.filter((r) => r.status === "PENDING").length})
-          </button>
+        <div className="space-y-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Current Reward Point Settings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <svg
+                        className="w-6 h-6 text-emerald-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        1 Point Value
+                      </p>
+                      <p className="text-xl font-bold text-gray-900">
+                        ₹{rewardConfig.pointValue.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <svg
+                        className="w-6 h-6 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Expires After
+                      </p>
+                      <p className="text-xl font-bold text-gray-900">
+                        {rewardConfig.expiryDays} days
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Reward Point Settings
+            </h3>
+
+            <form onSubmit={handleRewardConfigSubmit} className="space-y-6">
+              <div>
+                <label
+                  htmlFor="pointValue"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Value per Reward Point (INR)
+                </label>
+                <div className="relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">₹</span>
+                  </div>
+                  <input
+                    type="number"
+                    name="pointValue"
+                    id="pointValue"
+                    min="0.1"
+                    step="0.1"
+                    value={rewardConfig.pointValue}
+                    onChange={(e) =>
+                      setRewardConfig({
+                        ...rewardConfig,
+                        pointValue: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="focus:ring-teal-500 focus:border-teal-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md py-2 border"
+                    placeholder="1.00"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span
+                      className="text-gray-500 sm:text-sm"
+                      id="price-currency"
+                    >
+                      INR
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  This is the value of 1 reward point in Indian Rupees.
+                </p>
+              </div>
+              <div>
+                <label
+                  htmlFor="expiryDays"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Reward Points Expiry (Days)
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <input
+                    type="number"
+                    name="expiryDays"
+                    id="expiryDays"
+                    min="1"
+                    value={rewardConfig.expiryDays}
+                    onChange={(e) =>
+                      setRewardConfig({
+                        ...rewardConfig,
+                        expiryDays: parseInt(e.target.value) || 30,
+                      })
+                    }
+                    className="focus:ring-teal-500 focus:border-teal-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 border pl-3 pr-12"
+                    placeholder="30"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm" id="expiry-days">
+                      days
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  Points will expire after this many days from the date they are
+                  earned.
+                </p>
+              </div>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                >
+                  Save Settings
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-
-      {/* Referrals Table */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100">
-        {filteredReferrals.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">📋</span>
-            </div>
-            <p className="text-gray-600 mb-2 font-medium text-lg">
-              No referrals yet
-            </p>
-            <p className="text-gray-400 mb-6">
-              Start submitting leads to earn commissions
-            </p>
-            <button
-              onClick={onSubmitLead}
-              className="px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:shadow-lg font-medium transition-all duration-300"
+      <AnimatePresence>
+        {isDialogOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, y: -50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -50, scale: 0.9 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl"
             >
-              Submit your first lead
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/80">
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Lead Name
-                  </th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Company
-                  </th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Est. Value
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredReferrals.map((ref) => (
-                  <tr
-                    key={ref.id}
-                    className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors"
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <td className="py-4 px-5 text-sm font-medium text-gray-900">
-                      {ref.leadName}
-                    </td>
-                    <td className="py-4 px-5 text-sm text-gray-500">
-                      {ref.leadEmail}
-                    </td>
-                    <td className="py-4 px-5 text-sm text-gray-500">
-                      {ref.company || "-"}
-                    </td>
-                    <td className="py-4 px-5">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          ref.status === "APPROVED"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : ref.status === "REJECTED"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-700"
-                        }`}
-                      >
-                        {ref.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-sm text-gray-500">
-                      {new Date(ref.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-4 px-5 text-sm font-semibold text-gray-900 text-right">
-                      ₹{(Number(ref.estimatedValue) || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-center text-gray-900 mb-2">
+                Success!
+              </h3>
+              <p className="text-gray-600 text-center mb-6">{dialogMessage}</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setIsDialogOpen(false)}
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Got it!
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
@@ -588,16 +997,19 @@ function SettingsPage({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Company
+              Phone Number
             </label>
             <input
               type="text"
-              value={settingsForm.company}
+              value={settingsForm.phoneNumber}
               onChange={(e) =>
-                setSettingsForm({ ...settingsForm, company: e.target.value })
+                setSettingsForm({
+                  ...settingsForm,
+                  phoneNumber: e.target.value,
+                })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Company Name"
+              placeholder="Phone Number"
             />
           </div>
 
@@ -707,6 +1119,53 @@ function SettingsPage({
 export default function AffiliateDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const [activePage, setActivePage] = useState("dashboard");
+
+  // Initialize campaigns state with data from localStorage
+  const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
+    try {
+      const savedCampaigns = localStorage.getItem("refferq_campaigns");
+      if (savedCampaigns) {
+        const parsedCampaigns = JSON.parse(savedCampaigns);
+        if (Array.isArray(parsedCampaigns)) {
+          return parsedCampaigns.map((campaign: any) => ({
+            id:
+              campaign.id ||
+              `campaign-${Math.random().toString(36).substr(2, 9)}`,
+            campaignName: campaign.campaignName || "Unnamed Campaign",
+            status: campaign.status || "Draft",
+            revenue: Number(campaign.revenue) || 0,
+            conversions: Number(campaign.conversions) || 0,
+            ...campaign,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error initializing campaigns:", error);
+    }
+    return []; // Default to empty array if there's an error or no data
+  });
+
+  // Set up storage event listener to sync changes across tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "refferq_campaigns") {
+        try {
+          const newCampaigns = e.newValue ? JSON.parse(e.newValue) : [];
+          if (Array.isArray(newCampaigns)) {
+            setCampaigns(newCampaigns);
+          }
+        } catch (error) {
+          console.error("Error parsing updated campaigns from storage:", error);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   const [stats, setStats] = useState<AffiliateStats | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
@@ -727,6 +1186,7 @@ export default function AffiliateDashboard() {
   // Settings form state
   const [settingsForm, setSettingsForm] = useState({
     name: "",
+    phoneNumber: "",
     company: "",
     email: "",
     country: "",
@@ -743,50 +1203,72 @@ export default function AffiliateDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/affiliate/profile");
-      const data = await response.json();
 
-      const localCampaigns = JSON.parse(
-        localStorage.getItem("refferq_campaigns") || "[]"
-      );
+      // Get data from localStorage if available
+      let localCampaigns = [];
+      try {
+        const campaignsData = localStorage.getItem("refferq_campaigns");
+        localCampaigns = campaignsData ? JSON.parse(campaignsData) : [];
+
+        // Ensure localCampaigns is an array
+        if (!Array.isArray(localCampaigns)) {
+          console.warn(
+            "Invalid campaigns data in localStorage, resetting to empty array"
+          );
+          localCampaigns = [];
+          localStorage.setItem("refferq_campaigns", JSON.stringify([]));
+        }
+      } catch (error) {
+        console.error("Error parsing campaigns from localStorage:", error);
+        localCampaigns = [];
+        localStorage.setItem("refferq_campaigns", JSON.stringify([]));
+      }
+
       const totalCampaigns = localCampaigns.length;
       const activeCampaigns = localCampaigns.filter(
         (campaign: any) =>
-          campaign.status === "ACTIVE" || campaign.status === "active"
+          campaign &&
+          typeof campaign === "object" &&
+          (campaign.status === "active" || campaign.status === "Active")
       ).length;
 
-      if (data.success) {
-        setStats({
-          totalEarnings: data.affiliate?.balanceCents || 0,
-          totalClicks: 0,
-          totalLeads: data.referrals?.length || 0,
-          totalReferredCustomers:
-            data.referrals?.filter((r: any) => r.status === "APPROVED")
-              .length || 0,
-          totalCampaigns: totalCampaigns, // Add this line
-          activeCampaigns: activeCampaigns,
-          referralLink: `${window.location.origin}/r/${data.affiliate?.referralCode}`,
-          referralCode: data.affiliate?.referralCode || "",
-        });
-        setReferrals(data.referrals || []);
+      // Generate a random referral code if not exists
+      const referralCode =
+        localStorage.getItem("referralCode") ||
+        Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        // Load user settings
-        setSettingsForm({
-          name: user?.name || "",
-          company: "",
-          email: user?.email || "",
-          country: "India",
-          paymentMethod: "PayPal",
-          paymentEmail: user?.email || "",
-        });
+      if (!localStorage.getItem("referralCode")) {
+        localStorage.setItem("referralCode", referralCode);
       }
 
-      // Load payouts
-      const payoutsRes = await fetch("/api/affiliate/payouts");
-      if (payoutsRes.ok) {
-        const payoutsData = await payoutsRes.json();
-        setPayouts(payoutsData.payouts || []);
-      }
+      // Set default stats with local data
+      setStats({
+        totalEarnings: 0,
+        totalClicks: 0,
+        totalLeads: 0,
+        totalReferredCustomers: 0,
+        totalCampaigns: totalCampaigns,
+        activeCampaigns: activeCampaigns,
+        referralLink: `${window.location.origin}/r/${referralCode}`,
+        referralCode: referralCode,
+      });
+
+      // Set empty referrals array
+      setReferrals([]);
+
+      // Set empty payouts array
+      setPayouts([]);
+
+      // Set user settings
+      setSettingsForm({
+        name: user?.name || "",
+        phoneNumber: "",
+        company: "",
+        email: user?.email || "",
+        country: "India",
+        paymentMethod: "PayPal",
+        paymentEmail: user?.email || "",
+      });
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
     } finally {
@@ -836,28 +1318,23 @@ export default function AffiliateDashboard() {
 
   const handleUpdateSettings = async (field: string) => {
     try {
-      const response = await fetch("/api/affiliate/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settingsForm),
+      // Save settings to localStorage
+      const settingsKey = `affiliate_settings_${user?.id || "default"}`;
+      localStorage.setItem(settingsKey, JSON.stringify(settingsForm));
+
+      setNotification({
+        type: "success",
+        message: `${field} saved successfully!`,
       });
-
-      if (response.ok) {
-        setNotification({
-          type: "success",
-          message: `${field} updated successfully!`,
-        });
-      } else {
-        setNotification({
-          type: "error",
-          message: `Failed to update ${field}`,
-        });
-      }
     } catch (error) {
-      setNotification({ type: "error", message: "An error occurred" });
+      console.error("Error saving settings:", error);
+      setNotification({
+        type: "error",
+        message: `Failed to save ${field}`,
+      });
+    } finally {
+      setTimeout(() => setNotification(null), 5000);
     }
-
-    setTimeout(() => setNotification(null), 5000);
   };
 
   if (authLoading || loading) {
@@ -885,7 +1362,7 @@ export default function AffiliateDashboard() {
     );
   }
 
-  if (!user || !user.hasAffiliate) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/30 to-teal-50/30">
         <motion.div
@@ -1020,7 +1497,7 @@ export default function AffiliateDashboard() {
           {[
             { id: "dashboard", label: "Dashboard", icon: "🏠" },
             { id: "campaigns", label: "Campaigns", icon: "📢" },
-            { id: "referrals", label: "Referrals", icon: "👥" },
+            { id: "rewards", label: "Rewards", icon: "💰" },
             { id: "resources", label: "Resources", icon: "📚" },
             { id: "payouts", label: "Payouts", icon: "💳" },
             { id: "reports", label: "Reports", icon: "📊", badge: "BETA" },
@@ -1173,30 +1650,6 @@ export default function AffiliateDashboard() {
           </div>
         </motion.div>
 
-        {/* Earnings Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl p-6 mb-8 shadow-2xl shadow-emerald-500/20 overflow-hidden relative"
-        >
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-          <div className="relative flex items-center gap-4 text-white">
-            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-              <span className="text-3xl">💰</span>
-            </div>
-            <div>
-              <p className="text-white/80 text-sm font-medium">
-                Earn 20% commission on all paid customers
-              </p>
-              <p className="text-xl font-bold mt-1">
-                Start referring today and grow your earnings!
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
         <AnimatePresence mode="wait">
           {/* Dashboard Page */}
           {activePage === "dashboard" && (
@@ -1207,7 +1660,11 @@ export default function AffiliateDashboard() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <DashboardPage stats={stats} referrals={referrals} />
+              <DashboardPage
+                stats={stats}
+                referrals={referrals}
+                campaigns={campaigns}
+              />
             </motion.div>
           )}
 
@@ -1230,19 +1687,16 @@ export default function AffiliateDashboard() {
             </motion.div>
           )}
 
-          {/* Referrals Page */}
-          {activePage === "referrals" && (
+          {/* Rewards Page */}
+          {activePage === "rewards" && (
             <motion.div
-              key="referrals"
+              key="rewards"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <ReferralsPage
-                referrals={referrals}
-                onSubmitLead={() => setShowSubmitModal(true)}
-              />
+              <RewardsPage />
             </motion.div>
           )}
 

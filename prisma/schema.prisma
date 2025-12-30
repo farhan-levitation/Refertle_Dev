@@ -7,340 +7,192 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id             String       @id @default(cuid())
-  email          String       @unique
-  name           String
-  password       String
-  role           Role         @default(AFFILIATE)
-  status         UserStatus   @default(PENDING)
-  lastLogin      DateTime?    @map("last_login")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
-  profilePicture String?      @map("profile_picture")
-  affiliate      Affiliate?
-  auditLogs      AuditLog[]
-  commissions    Commission[]
-  payouts        Payout[]
-
-  @@map("users")
-}
-
-model Affiliate {
-  id             String        @id @default(cuid())
-  userId         String        @unique @map("user_id")
-  referralCode   String        @unique @map("referral_code")
-  payoutDetails  Json          @default("{}") @map("payout_details")
-  balanceCents   Int           @default(0) @map("balance_cents")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  partnerGroupId String?       @map("partner_group_id")
-  partnerGroup   PartnerGroup? @relation(fields: [partnerGroupId], references: [id])
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  commissions    Commission[]
-  conversions    Conversion[]
-  referrals      Referral[]
-  transactions   Transaction[]
-  payouts        Payout[]
-
-  @@map("affiliates")
-}
-
-model Referral {
-  id             String          @id @default(cuid())
-  affiliateId    String          @map("affiliate_id")
-  leadName       String          @map("lead_name")
-  leadEmail      String          @map("lead_email")
-  leadPhone      String?         @map("lead_phone")
-  subscriptionId String?         @map("subscription_id")
-  status         ReferralStatus  @default(PENDING)
-  notes          String?
-  metadata       Json            @default("{}")
-  reviewedBy     String?         @map("reviewed_by")
-  reviewedAt     DateTime?       @map("reviewed_at")
-  reviewNotes    String?         @map("review_notes")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  conversions    Conversion[]
-  clicks         ReferralClick[]
-  transactions   Transaction[]
-  affiliate      Affiliate       @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
-
-  @@map("referrals")
-}
-
 model ReferralClick {
-  id         String   @id @default(cuid())
-  referralId String   @map("referral_id")
-  ipAddress  String   @map("ip_address")
-  userAgent  String?  @map("user_agent")
-  referer    String?
-  metadata   Json     @default("{}")
-  createdAt  DateTime @default(now()) @map("created_at")
-  referral   Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  referral_code  String?         @db.VarChar(50)
+  ipAddress      String?         @map("ip_address") @db.VarChar(45)
+  userAgent      String?         @map("user_agent")
+  source         String?         @db.VarChar(50)
+  createdAt      DateTime?       @default(now()) @map("created_at") @db.Timestamptz(6)
+  referral_codes referral_codes? @relation(fields: [referral_code], references: [code], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("referral_clicks")
 }
 
-model Conversion {
-  id            String           @id @default(cuid())
-  affiliateId   String           @map("affiliate_id")
-  referralId    String?          @map("referral_id")
-  eventType     ConversionType   @map("event_type")
-  amountCents   Int              @map("amount_cents")
-  currency      String           @default("USD")
-  status        ConversionStatus @default(PENDING)
-  eventMetadata Json             @default("{}") @map("event_metadata")
-  createdAt     DateTime         @default(now()) @map("created_at")
-  updatedAt     DateTime         @updatedAt @map("updated_at")
-  commissions   Commission[]
-  affiliate     Affiliate        @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
-  referral      Referral?        @relation(fields: [referralId], references: [id])
-
-  @@map("conversions")
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model campaigns {
+  id                       String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  merchant_id              String?                 @db.Uuid
+  name                     String                  @db.VarChar(255)
+  status                   String?                 @default("draft") @db.VarChar(50)
+  start_date               DateTime?               @db.Timestamptz(6)
+  end_date                 DateTime?               @db.Timestamptz(6)
+  reward_type              String                  @db.VarChar(50)
+  who_gets_reward          String                  @db.VarChar(50)
+  referrer_reward_type     String?                 @db.VarChar(50)
+  referrer_reward_value    Decimal?                @db.Decimal(10, 2)
+  referee_reward_type      String?                 @db.VarChar(50)
+  referee_reward_value     Decimal?                @db.Decimal(10, 2)
+  min_order_value          Decimal?                @default(0) @db.Decimal(10, 2)
+  eligible_products        Json?                   @default("[\"all\"]")
+  eligible_collections     Json?                   @default("[]")
+  usage_limit              String?                 @default("unlimited") @db.VarChar(50)
+  reward_issuance          String?                 @default("instant") @db.VarChar(50)
+  reward_issuance_days     Int?                    @default(0)
+  reward_expiry_days       Int?                    @default(365)
+  return_cancellation_rule String?                 @default("revoke") @db.VarChar(50)
+  created_at               DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime?               @default(now()) @db.Timestamptz(6)
+  merchants                merchants?              @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  referral_codes           referral_codes[]
+  referral_transactions    referral_transactions[]
+  rewards                  rewards[]
 }
 
-model Commission {
-  id           String           @id @default(cuid())
-  conversionId String           @map("conversion_id")
-  affiliateId  String           @map("affiliate_id")
-  userId       String           @map("user_id")
-  amountCents  Int              @map("amount_cents")
-  rate         Float
-  status       CommissionStatus @default(PENDING)
-  approvedBy   String?          @map("approved_by")
-  approvedAt   DateTime?        @map("approved_at")
-  paidAt       DateTime?        @map("paid_at")
-  createdAt    DateTime         @default(now()) @map("created_at")
-  updatedAt    DateTime         @updatedAt @map("updated_at")
-  affiliate    Affiliate        @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
-  conversion   Conversion       @relation(fields: [conversionId], references: [id], onDelete: Cascade)
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payout       Payout?          @relation("PayoutCommissions", fields: [payoutId], references: [id])
-  payoutId     String?          @map("payout_id")
-
-  @@map("commissions")
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model fraud_flags {
+  id            String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  merchant_id   String?    @db.Uuid
+  referral_code String?    @db.VarChar(50)
+  actor_email   String?    @db.VarChar(255)
+  reason        String?    @db.VarChar(255)
+  severity      String?    @default("medium") @db.VarChar(20)
+  metadata      Json?
+  created_at    DateTime?  @default(now()) @db.Timestamptz(6)
+  merchants     merchants? @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-model Payout {
-  id              String       @id @default(cuid())
-  affiliateId     String       @map("affiliate_id")
-  userId          String       @map("user_id")
-  amountCents     Int          @map("amount_cents")
-  commissionCount Int          @default(0) @map("commission_count")
-  method          String?
-  status          PayoutStatus @default(PENDING)
-  notes           String?
-  processedAt     DateTime?    @map("processed_at")
-  createdBy       String       @map("created_by")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
-  affiliate       Affiliate    @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  commissions     Commission[] @relation("PayoutCommissions")
-
-  @@map("payouts")
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model merchants {
+  id                     String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  shop_id                String                  @unique @db.VarChar(255)
+  shop_domain            String                  @unique @db.VarChar(255)
+  email                  String?                 @unique @db.VarChar(255)
+  phone                  String?                 @db.VarChar(50)
+  access_token_encrypted String?
+  plan                   String?                 @default("basic") @db.VarChar(50)
+  status                 String?                 @default("active") @db.VarChar(50)
+  supabase_user_id       String?                 @db.Uuid
+  created_at             DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime?               @default(now()) @db.Timestamptz(6)
+  name                   String?                 @db.VarChar(255)
+  campaigns              campaigns[]
+  fraud_flags            fraud_flags[]
+  referral_codes         referral_codes[]
+  referral_transactions  referral_transactions[]
+  referrers              referrers[]
+  rewards                rewards[]
+  user_points            user_points[]
+  user_wallets           user_wallets[]
 }
 
-model CommissionRule {
-  id         String             @id @default(cuid())
-  name       String
-  type       CommissionRuleType
-  value      Float
-  conditions Json               @default("{}")
-  isDefault  Boolean            @default(false) @map("is_default")
-  isActive   Boolean            @default(true) @map("is_active")
-  createdAt  DateTime           @default(now()) @map("created_at")
-  updatedAt  DateTime           @updatedAt @map("updated_at")
-
-  @@map("commission_rules")
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model referral_codes {
+  code                  String                  @id @db.VarChar(50)
+  merchant_id           String?                 @db.Uuid
+  referrer_id           String?                 @db.Uuid
+  campaign_id           String?                 @db.Uuid
+  product_id            String?                 @db.VarChar(255)
+  variant_id            String?                 @db.VarChar(255)
+  clicks                Int?                    @default(0)
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  referral_clicks       ReferralClick[]
+  campaigns             campaigns?              @relation(fields: [campaign_id], references: [id], onUpdate: NoAction)
+  merchants             merchants?              @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  referrers             referrers?              @relation(fields: [referrer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  referral_transactions referral_transactions[]
 }
 
-model AuditLog {
-  id         String   @id @default(cuid())
-  actorId    String   @map("actor_id")
-  action     String
-  objectType String   @map("object_type")
-  objectId   String   @map("object_id")
-  payload    Json     @default("{}")
-  createdAt  DateTime @default(now()) @map("created_at")
-  actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model referral_transactions {
+  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  merchant_id    String?         @db.Uuid
+  campaign_id    String?         @db.Uuid
+  referral_code  String?         @db.VarChar(50)
+  referrer_id    String?         @db.Uuid
+  order_id       String          @db.VarChar(255)
+  order_number   String?         @db.VarChar(100)
+  total_price    Decimal?        @db.Decimal(10, 2)
+  currency       String?         @db.VarChar(10)
+  customer_email String?         @db.VarChar(255)
+  status         String?         @default("pending_validation") @db.VarChar(50)
+  fraud_reason   String?
+  created_at     DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?       @default(now()) @db.Timestamptz(6)
+  campaigns      campaigns?      @relation(fields: [campaign_id], references: [id], onUpdate: NoAction)
+  merchants      merchants?      @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  referral_codes referral_codes? @relation(fields: [referral_code], references: [code], onDelete: NoAction, onUpdate: NoAction)
+  referrers      referrers?      @relation(fields: [referrer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  rewards        rewards[]
 
-  @@map("audit_logs")
+  @@unique([merchant_id, order_id])
 }
 
-model OTP {
-  id        String   @id @default(cuid())
-  email     String
-  code      String
-  expiresAt DateTime @map("expires_at")
-  isUsed    Boolean  @default(false) @map("is_used")
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model referrers {
+  id                    String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  merchant_id           String?                 @db.Uuid
+  email                 String?                 @db.VarChar(255)
+  phone                 String?                 @db.VarChar(50)
+  name                  String?                 @db.VarChar(255)
+  shopify_customer_id   String?                 @db.VarChar(255)
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  referral_codes        referral_codes[]
+  referral_transactions referral_transactions[]
+  merchants             merchants?              @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([email])
-  @@index([code])
-  @@map("otps")
+  @@unique([merchant_id, email])
 }
 
-model ProgramSettings {
-  id                        String   @id @default(cuid())
-  programId                 String   @unique @map("program_id")
-  productName               String   @map("product_name")
-  programName               String   @map("program_name")
-  websiteUrl                String   @map("website_url")
-  currency                  String   @default("INR")
-  blockedCountries          Json     @default("[]") @map("blocked_countries")
-  portalSubdomain           String   @map("portal_subdomain")
-  termsOfService            String?  @map("terms_of_service")
-  minimumPayoutThreshold    Int      @default(0) @map("minimum_payout_threshold")
-  payoutTerm                String   @default("NET-15") @map("payout_term")
-  payoutMethods             Json     @default("[\"PAYPAL\"]") @map("payout_methods")
-  brandBackgroundColor      String   @default("#000000") @map("brand_background_color")
-  brandButtonColor          String   @default("#000000") @map("brand_button_color")
-  brandTextColor            String   @default("#ffffff") @map("brand_text_color")
-  companyLogo               String?  @map("company_logo")
-  favicon                   String?
-  cookieDuration            Int      @default(30) @map("cookie_duration")
-  urlParameters             Json     @default("[]") @map("url_parameters")
-  hideCustomerEmails        Boolean  @default(true) @map("hide_customer_emails")
-  disablePersonalizedLinks  Boolean  @default(false) @map("disable_personalized_links")
-  blockKeywords             Json     @default("[]") @map("block_keywords")
-  blockSocialMediaAds       Json     @default("[]") @map("block_social_media_ads")
-  allowManualLeadSubmission Boolean  @default(false) @map("allow_manual_lead_submission")
-  programWideCouponCode     String?  @map("program_wide_coupon_code")
-  hidePartnerLinks          Boolean  @default(false) @map("hide_partner_links")
-  requireBusinessEmail      Boolean  @default(false) @map("require_business_email")
-  enablePostbacks           Boolean  @default(false) @map("enable_postbacks")
-  createdAt                 DateTime @default(now()) @map("created_at")
-  updatedAt                 DateTime @updatedAt @map("updated_at")
-
-  @@map("program_settings")
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rewards {
+  id                    String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  merchant_id           String?                @db.Uuid
+  transaction_id        String?                @db.Uuid
+  campaign_id           String?                @db.Uuid
+  user_email            String                 @db.VarChar(255)
+  user_type             String                 @db.VarChar(20)
+  reward_type           String                 @db.VarChar(50)
+  amount                Decimal                @db.Decimal(10, 2)
+  currency              String?                @default("INR") @db.VarChar(10)
+  point_value           Int?
+  status                String?                @default("pending") @db.VarChar(50)
+  discount_code         String?                @db.VarChar(100)
+  shopify_price_rule_id String?                @db.VarChar(255)
+  approval_date         DateTime?              @db.Timestamptz(6)
+  expiry_date           DateTime?              @db.Timestamptz(6)
+  issued_at             DateTime?              @db.Timestamptz(6)
+  created_at            DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?              @default(now()) @db.Timestamptz(6)
+  campaigns             campaigns?             @relation(fields: [campaign_id], references: [id], onUpdate: NoAction)
+  merchants             merchants?             @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  referral_transactions referral_transactions? @relation(fields: [transaction_id], references: [id], onUpdate: NoAction)
 }
 
-model PartnerGroup {
-  id             String      @id @default(cuid())
-  name           String
-  description    String?
-  commissionRate Float       @map("commission_rate")
-  signupUrl      String?     @map("signup_url")
-  isDefault      Boolean     @default(false) @map("is_default")
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-  affiliates     Affiliate[]
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_points {
+  id          String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  merchant_id String?    @db.Uuid
+  user_email  String     @db.VarChar(255)
+  balance     Int?       @default(0)
+  updated_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  merchants   merchants? @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@map("partner_groups")
+  @@unique([merchant_id, user_email])
 }
 
-model Transaction {
-  id              String            @id @default(cuid())
-  referralId      String            @map("referral_id")
-  affiliateId     String            @map("affiliate_id")
-  customerId      String?           @map("customer_id")
-  customerName    String            @map("customer_name")
-  customerEmail   String            @map("customer_email")
-  amountCents     Int               @map("amount_cents")
-  commissionCents Int               @map("commission_cents")
-  commissionRate  Float             @map("commission_rate")
-  status          TransactionStatus @default(PENDING)
-  description     String?
-  invoiceId       String?           @map("invoice_id")
-  paymentMethod   String?           @map("payment_method")
-  paidAt          DateTime?         @map("paid_at")
-  createdBy       String            @map("created_by")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  referral        Referral          @relation(fields: [referralId], references: [id], onDelete: Cascade)
-  affiliate       Affiliate         @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_wallets {
+  id          String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  merchant_id String?    @db.Uuid
+  user_email  String     @db.VarChar(255)
+  balance     Decimal?   @default(0.00) @db.Decimal(10, 2)
+  currency    String?    @default("INR") @db.VarChar(10)
+  updated_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  merchants   merchants? @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@map("transactions")
-}
-
-model EmailTemplate {
-  id        String            @id @default(cuid())
-  type      EmailTemplateType
-  name      String
-  subject   String
-  body      String
-  variables Json              @default("[]")
-  isActive  Boolean           @default(true) @map("is_active")
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
-  emailLogs EmailLog[]
-
-  @@map("email_templates")
-}
-
-model EmailLog {
-  id             String        @id @default(cuid())
-  templateId     String        @map("template_id")
-  recipientId    String        @map("recipient_id")
-  recipientEmail String        @map("recipient_email")
-  subject        String
-  body           String
-  status         EmailStatus   @default(PENDING)
-  sentAt         DateTime?     @map("sent_at")
-  error          String?
-  metadata       Json          @default("{}")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  template       EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-
-  @@index([recipientId])
-  @@index([templateId])
-  @@map("email_logs")
-}
-
-model IntegrationSettings {
-  id             String   @id @default(cuid())
-  userId         String   @unique @map("user_id")
-  provider       String
-  apiKey         String?  @map("api_key")
-  publicKey      String?  @map("public_key")
-  webhookUrl     String?  @map("webhook_url")
-  trackingScript String?  @map("tracking_script")
-  isActive       Boolean  @default(true) @map("is_active")
-  config         Json     @default("{}")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  @@map("integration_settings")
-}
-
-model Webhook {
-  id           String       @id @default(cuid())
-  name         String
-  url          String
-  secret       String
-  events       Json         @default("[]") // Array of event types
-  isActive     Boolean      @default(true) @map("is_active")
-  failureCount Int          @default(0) @map("failure_count")
-  lastTriggeredAt DateTime? @map("last_triggered_at")
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
-  logs         WebhookLog[]
-
-  @@map("webhooks")
-}
-
-model WebhookLog {
-  id           String        @id @default(cuid())
-  webhookId    String        @map("webhook_id")
-  eventType    String        @map("event_type")
-  payload      Json          @default("{}")
-  status       WebhookStatus @default(PENDING)
-  statusCode   Int?          @map("status_code")
-  response     String?
-  error        String?
-  attempts     Int           @default(0)
-  nextRetryAt  DateTime?     @map("next_retry_at")
-  completedAt  DateTime?     @map("completed_at")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  webhook      Webhook       @relation(fields: [webhookId], references: [id], onDelete: Cascade)
-
-  @@index([webhookId])
-  @@index([eventType])
-  @@index([status])
-  @@map("webhook_logs")
+  @@unique([merchant_id, user_email])
 }
 
 enum WebhookStatus {

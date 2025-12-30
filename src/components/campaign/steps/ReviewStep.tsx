@@ -61,7 +61,7 @@ export default function ReviewStep({ formData }: ReviewStepProps) {
           <h3 className="text-lg font-medium mb-4 pb-2 border-b">
             Reward Logic
           </h3>
-          <div className="space-y-4">
+          <div className=" grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-gray-500">
                 Who gets rewards
@@ -74,7 +74,6 @@ export default function ReviewStep({ formData }: ReviewStepProps) {
                     : "Only referred user"}
               </p>
             </div>
-
             {(formData.rewardRecipients === "both" ||
               formData.rewardRecipients === "referrer") && (
               <div>
@@ -84,7 +83,6 @@ export default function ReviewStep({ formData }: ReviewStepProps) {
                 <p className="text-sm">{getRewardText("referrer")}</p>
               </div>
             )}
-
             {(formData.rewardRecipients === "both" ||
               formData.rewardRecipients === "referred") && (
               <div>
@@ -94,13 +92,17 @@ export default function ReviewStep({ formData }: ReviewStepProps) {
                 <p className="text-sm">{getRewardText("referred")}</p>
               </div>
             )}
+            <div>
+              <p className="text-sm font-medium text-gray-500">Reward Type</p>
+              <p className="text-sm capitalize">{formData.rewardType}</p>
+            </div>{" "}
           </div>
         </div>
 
         {/* Conditions */}
         <div>
           <h3 className="text-lg font-medium mb-4 pb-2 border-b">Conditions</h3>
-          <div className="space-y-4">
+          <div className=" grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-gray-500">
                 Minimum Order Value
@@ -143,7 +145,7 @@ export default function ReviewStep({ formData }: ReviewStepProps) {
         {/* Risk Rules */}
         <div>
           <h3 className="text-lg font-medium mb-4 pb-2 border-b">Risk Rules</h3>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Reward Expiry</p>
               <p className="text-sm">{formData.rewardExpiryDays} days</p>
