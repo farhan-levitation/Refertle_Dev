@@ -308,7 +308,7 @@ export default function CampaignsTab({
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium mb-2">Campaign Name</h3>
-                  <p>{viewingCampaign.campaignName}</p>
+                  <p>{viewingCampaign.name}</p>
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-2">Status</h3>
@@ -326,23 +326,24 @@ export default function CampaignsTab({
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-2">Reward Type</h3>
-                  <p>{viewingCampaign.rewardType}</p>
+                  <p>{viewingCampaign.reward_type}</p>
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-2">Duration</h3>
                   <p>
-                    {new Date(viewingCampaign.startDate).toLocaleDateString()} -{" "}
-                    {viewingCampaign.endDate
-                      ? new Date(viewingCampaign.endDate).toLocaleDateString()
+                    {new Date(viewingCampaign.start_date).toLocaleDateString()}{" "}
+                    -{" "}
+                    {viewingCampaign.end_date
+                      ? new Date(viewingCampaign.end_date).toLocaleDateString()
                       : "No end date"}
                   </p>
                 </div>
-                {viewingCampaign.minOrderValue !== undefined && (
+                {viewingCampaign.min_order_value !== undefined && (
                   <div>
                     <h3 className="text-lg font-medium mb-2">
                       Minimum Order Value
                     </h3>
-                    <p>${viewingCampaign.minOrderValue?.toFixed(2)}</p>
+                    <p>${viewingCampaign.min_order_value}</p>
                   </div>
                 )}
                 <div>
@@ -350,9 +351,9 @@ export default function CampaignsTab({
                     Eligible Products
                   </h3>
                   <p>
-                    {!viewingCampaign.eligibleProducts?.length
+                    {!viewingCampaign.eligible_products?.length
                       ? "All Products"
-                      : viewingCampaign.eligibleProducts
+                      : viewingCampaign.eligible_products
                           .map((p: string) => {
                             if (p === "all") return "All Products";
                             if (p.startsWith("category:"))
