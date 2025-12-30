@@ -1,6 +1,18 @@
 "use client";
 import { useState, useEffect } from "react";
 import { CampaignForm, FormData } from "@/components/campaign";
+
+// Helper function to format dates as YYYY-MM-DD
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return "X";
+  try {
+    const date = new Date(dateString);
+    return date.toISOString().split("T")[0];
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Invalid Date";
+  }
+};
 import { Button } from "@/components/ui/button";
 import { AnimatePresence } from "framer-motion";
 import { MoreVertical, Eye, Edit, Trash2 } from "lucide-react";
@@ -33,33 +45,68 @@ export default function CampaignsTab({
   const [viewingCampaign, setViewingCampaign] = useState<FormData | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<FormData | null>(null);
 
+  // Fetch campaigns from API when component mounts
   useEffect(() => {
-    const saved = localStorage.getItem("refferq_campaigns");
-    if (saved) setCampaigns(JSON.parse(saved));
+    const fetchCampaigns = async () => {
+      const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/campaigns?shop=${process.env.NEXT_PUBLIC_SHOP_NAME}`;
+
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error("Failed to fetch campaigns");
+        const data = await response.json();
+        setCampaigns(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error fetching campaigns:", error);
+      }
+    };
+
+    fetchCampaigns();
   }, []);
 
-  const addCampaign = (data: FormData) => {
-    if (editingCampaign) {
-      updateCampaign(data);
-      return;
-    }
-    const id = data.id || Date.now().toString();
-    const newCampaign = { ...data, id };
-    const updated = [...campaigns, newCampaign];
-    setCampaigns(updated);
-    localStorage.setItem("refferq_campaigns", JSON.stringify(updated));
-    setShowForm(false);
-  };
+  // const addCampaign = async (data: FormData) => {
+  //   try {
+  //     const response = await fetch(
+  //       "http://localhost:4000/api/campaigns/?shop=jindaal-2.myshopify.com",
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(data),
+  //       }
+  //     );
 
-  const updateCampaign = (updatedCampaign: FormData) => {
-    const updated = campaigns.map((c) =>
-      c.id === updatedCampaign.id ? updatedCampaign : c
-    );
-    setCampaigns(updated);
-    localStorage.setItem("refferq_campaigns", JSON.stringify(updated));
-    setShowForm(false);
-    setEditingCampaign(null);
-  };
+  //     if (!response.ok) throw new Error("Failed to add campaign");
+
+  //     const newCampaign = await response.json();
+  //     setCampaigns((prev) => [...prev, newCampaign]);
+  //     setShowForm(false);
+  //   } catch (error) {
+  //     console.error("Error adding campaign:", error);
+  //   }
+  // };
+
+  // const updateCampaign = async (updatedCampaign: FormData) => {
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:4000/api/campaigns/${updatedCampaign.id}?shop=jindaal-2.myshopify.com`,
+  //       {
+  //         method: "PUT",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(updatedCampaign),
+  //       }
+  //     );
+
+  //     if (!response.ok) throw new Error("Failed to update campaign");
+
+  //     const updatedData = await response.json();
+  //     setCampaigns((prev) =>
+  //       prev.map((c) => (c.id === updatedCampaign.id ? updatedData : c))
+  //     );
+  //     setShowForm(false);
+  //     setEditingCampaign(null);
+  //   } catch (error) {
+  //     console.error("Error updating campaign:", error);
+  //   }
+  // };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-8">
@@ -135,10 +182,11 @@ export default function CampaignsTab({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
-                        {campaign.campaignName}
+                        {campaign.name}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {campaign.startDate} - {campaign.endDate || "X"}
+                        {formatDate(campaign.start_date)} -{" "}
+                        {formatDate(campaign.end_date)}
                       </div>
                     </div>
                   </td>
@@ -159,7 +207,7 @@ export default function CampaignsTab({
                     {campaign.rewardPending || "0"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {campaign.rewardType}
+                    {campaign.reward_type}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     ₹0.00
@@ -197,20 +245,37 @@ export default function CampaignsTab({
                             Edit
                           </DropdownMenuItem> */}
                         <DropdownMenuItem
-                          onClick={() => {
+                          onClick={async () => {
                             if (
                               confirm(
                                 "Are you sure you want to delete this campaign?"
                               )
                             ) {
-                              const updatedCampaigns = campaigns.filter(
-                                (c) => c.id !== campaign.id
-                              );
-                              setCampaigns(updatedCampaigns);
-                              localStorage.setItem(
-                                "refferq_campaigns",
-                                JSON.stringify(updatedCampaigns)
-                              );
+                              try {
+                                const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/campaigns/${campaign.id}?shop=${process.env.NEXT_PUBLIC_SHOP_NAME}`;
+                                const response = await fetch(apiUrl, {
+                                  method: "DELETE",
+                                });
+
+                                if (!response.ok) {
+                                  throw new Error("Failed to delete campaign");
+                                }
+
+                                // Update local state to remove the deleted campaign
+                                setCampaigns((prevCampaigns) =>
+                                  prevCampaigns.filter(
+                                    (c) => c.id !== campaign.id
+                                  )
+                                );
+                              } catch (error) {
+                                console.error(
+                                  "Error deleting campaign:",
+                                  error
+                                );
+                                alert(
+                                  "Failed to delete campaign. Please try again."
+                                );
+                              }
                             }
                           }}
                           className="cursor-pointer text-red-600 hover:!text-red-600"
@@ -288,7 +353,7 @@ export default function CampaignsTab({
                     {!viewingCampaign.eligibleProducts?.length
                       ? "All Products"
                       : viewingCampaign.eligibleProducts
-                          .map((p) => {
+                          .map((p: string) => {
                             if (p === "all") return "All Products";
                             if (p.startsWith("category:"))
                               return (

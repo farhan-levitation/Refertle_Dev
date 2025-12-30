@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
@@ -46,7 +46,7 @@ interface Referral {
 
 interface Campaign {
   id: string;
-  campaignName: string;
+  name: string;
   status: "Active" | "Paused" | "Completed" | "Draft";
   revenue: number;
   conversions: number;
@@ -88,38 +88,78 @@ function DashboardPage({
   };
 
   // Get and filter active campaigns from local storage
-  const campaignsFromStorage = localStorage.getItem("refferq_campaigns");
-  console.log("Raw campaigns from storage:", campaignsFromStorage);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const localCampaigns: Campaign[] = campaignsFromStorage
-    ? JSON.parse(campaignsFromStorage)
-    : [];
-  console.log("Parsed campaigns:", localCampaigns);
+  // Memoize active campaigns to avoid recalculating on every render
+  // const activeCampaigns = useMemo(
+  //   () =>
+  //     campaigns.filter(
+  //       (campaign) => campaign.status?.toLowerCase() === "active"
+  //     ),
+  //   [campaigns]
+  // );
 
-  const activeCampaigns = localCampaigns.filter(
-    (campaign) => campaign.status.toLowerCase() === "active"
+  // Fetch campaigns from backend API
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/campaigns?shop=${process.env.NEXT_PUBLIC_SHOP_NAME}`;
+      try {
+        setIsLoading(true);
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setCampaigns(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error fetching campaigns:", err);
+        setError("Failed to load campaigns. Please try again later.");
+        setCampaigns([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCampaigns();
+  }, []);
+
+  const activeCampaigns = useMemo(
+    () =>
+      campaigns.filter(
+        (campaign) => campaign.status?.toLowerCase() === "active"
+      ),
+    [campaigns]
   );
-  console.log("Active campaigns:", activeCampaigns);
 
-  const handleDeleteCampaign = () => {
+  const handleDeleteCampaign = async () => {
     if (!selectedCampaign) return;
 
-    // Get current campaigns from local storage
-    const currentCampaigns = JSON.parse(
-      localStorage.getItem("refferq_campaigns") || "[]"
-    );
+    try {
+      const response = await fetch(
+        `http://localhost:4000/api/campaigns/${selectedCampaign.id}?shop=jindaal-2.myshopify.com`,
+        {
+          method: "DELETE",
+        }
+      );
 
-    // Filter out the campaign to be deleted
-    const updatedCampaigns = currentCampaigns.filter(
-      (campaign: Campaign) => campaign.id !== selectedCampaign.id
-    );
+      if (!response.ok) {
+        throw new Error("Failed to delete campaign");
+      }
 
-    // Update local storage
-    localStorage.setItem("refferq_campaigns", JSON.stringify(updatedCampaigns));
+      // Update local state to reflect the deletion
+      setCampaigns((prevCampaigns) =>
+        prevCampaigns.filter((campaign) => campaign.id !== selectedCampaign.id)
+      );
 
-    // Close the modal and refresh the campaigns
-    closeModal();
-    window.location.reload(); // This will refresh the page to show updated campaigns
+      closeModal();
+    } catch (err) {
+      console.error("Error deleting campaign:", err);
+      // You might want to show an error message to the user here
+    }
   };
 
   // Sample data - replace with your actual data
@@ -135,9 +175,8 @@ function DashboardPage({
   const campaignData = activeCampaigns.map((campaign) => {
     // Safely handle missing or invalid campaign names
     const campaignName =
-      typeof campaign.campaignName === "string" &&
-      campaign.campaignName.trim().length > 0
-        ? campaign.campaignName
+      typeof campaign.name === "string" && campaign.name.trim().length > 0
+        ? campaign.name
         : "Unnamed Campaign";
 
     // Get the first word of the campaign name for the X-axis
@@ -232,7 +271,7 @@ function DashboardPage({
             </div>
           </div>
           <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-            {localCampaigns.length || 0}
+            {isLoading ? "..." : campaigns.length}
           </p>
           <p className="text-xs text-gray-400 mt-2">campaigns</p>
         </div>
@@ -247,7 +286,7 @@ function DashboardPage({
             </div>
           </div>
           <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-            {activeCampaigns.length || 0}
+            {isLoading ? "..." : activeCampaigns.length}
           </p>
           <p className="text-xs text-gray-400 mt-2">campaigns</p>
         </div>
@@ -424,7 +463,7 @@ function DashboardPage({
                     className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors"
                   >
                     <td className="py-4 px-5 text-sm font-medium text-gray-900">
-                      {campaign.campaignName}
+                      {campaign.name}
                     </td>
                     <td className="py-4 px-5">
                       <span
@@ -508,7 +547,7 @@ function DashboardPage({
               <div className="p-6">
                 <div className="flex justify-between items-start mb-6">
                   <h3 className="text-xl font-bold text-gray-900">
-                    {selectedCampaign.campaignName}
+                    {selectedCampaign.name}
                   </h3>
                   <button
                     onClick={closeModal}

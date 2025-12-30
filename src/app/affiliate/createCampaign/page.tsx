@@ -16,14 +16,14 @@ export default function CreateCampaign() {
       console.log("Submitting campaign data:", data);
 
       // Validate required environment variables
-      if (!process.env.BACKEND_URL) {
+      if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
         throw new Error("BACKEND_URL environment variable is not set");
       }
-      if (!process.env.SHOP_NAME) {
+      if (!process.env.NEXT_PUBLIC_SHOP_NAME) {
         throw new Error("SHOP_NAME environment variable is not set");
       }
 
-      const apiUrl = `${process.env.BACKEND_URL}/api/campaigns?shop=${process.env.SHOP_NAME}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/campaigns?shop=${process.env.NEXT_PUBLIC_SHOP_NAME}`;
       console.log("Making request to:", apiUrl);
 
       const response = await fetch(apiUrl, {
