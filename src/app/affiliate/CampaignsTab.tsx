@@ -343,7 +343,7 @@ export default function CampaignsTab({
                     <h3 className="text-lg font-medium mb-2">
                       Minimum Order Value
                     </h3>
-                    <p>${viewingCampaign.min_order_value}</p>
+                    <p>₹{viewingCampaign.min_order_value}</p>
                   </div>
                 )}
                 <div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -81,10 +82,10 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md px-8 relative z-10"
+        className="w-full max-w-md px-4 sm:px-8 relative z-10"
       >
         {/* Glass Card */}
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 shadow-2xl p-8">
+        <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 shadow-2xl p-6 sm:p-8">
           {/* Logo */}
           <motion.div
             initial={{ scale: 0.8 }}
@@ -93,8 +94,15 @@ export default function LoginPage() {
             className="text-center mb-8"
           >
             <div className="inline-flex items-center justify-center mb-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/30 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                <span className="text-3xl">R</span>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 via-white to-indigo-500 flex items-center justify-center shadow-xl shadow-purple-500/40 animate-gradient">
+                <span className="text-white text-xl">
+                  <Image
+                    src="/refertle-logo.png"
+                    alt="Refertle Logo"
+                    width={120}
+                    height={120}
+                  />
+                </span>
               </div>
             </div>
             <h2 className="text-2xl font-bold text-white">Refertle</h2>
@@ -131,12 +139,12 @@ export default function LoginPage() {
                 >
                   Password
                 </label>
-                <Link
+                {/* <Link
                   href="/forgot-password"
                   className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
                 >
                   Forgot password?
-                </Link>
+                </Link> */}
               </div>
               <input
                 id="password"
@@ -198,10 +206,10 @@ export default function LoginPage() {
             <p className="text-sm text-white/60">
               Don't have an account?{" "}
               <Link
-                href="/signup"
+                href=""
                 className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
               >
-                Sign up
+                Install Plugin
               </Link>
             </p>
           </div>
