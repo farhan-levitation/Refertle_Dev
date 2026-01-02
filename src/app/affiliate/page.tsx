@@ -217,10 +217,10 @@ function DashboardPage({
   ];
 
   const funnelData = [
-    { stage: "Link Generated", value: 100 },
+    { stage: "Link", value: 100 },
     { stage: "Clicks", value: 200 },
     { stage: "Purchases", value: 50 },
-    { stage: "Reward Issued", value: 50 },
+    { stage: "Reward", value: 50 },
   ];
 
   return (
@@ -230,7 +230,7 @@ function DashboardPage({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-gray-500 font-medium">
@@ -296,7 +296,7 @@ function DashboardPage({
         <h3 className="text-lg font-bold text-gray-900 mb-5">
           Referral Funnel
         </h3>
-        <div className="flex items-center justify-between overflow-x-auto pb-2 -mx-2">
+        <div className="flex items-center justify-between overflow-x-auto pb-2 -mx-2 scrollbar-hide">
           {[
             { label: "Links generated", count: 100, color: "#f4f3ef" },
             { label: "Clicks", count: 200, color: "#efeee8" },
@@ -314,54 +314,60 @@ function DashboardPage({
                     {item.count}
                   </div>
                 </div>
-                {/* {index < 3 && (
-                  <div className=" text-gray-300 mx-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="m9 18 6-6-6-6" />
-                    </svg>
-                  </div>
-                )} */}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 mb-8">
         {/* Graph 1: Referral Performance Over Time (Line Graph) */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Referral Performance Over Time
           </h3>
-          <div className="h-80">
+          <div className="h-60 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={referralData}>
+              <LineChart
+                data={referralData}
+                margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: "0.75rem" }}
+                  tickMargin={8}
+                />
+                <YAxis tick={{ fontSize: "0.75rem" }} width={44} />
+                <Tooltip
+                  contentStyle={{
+                    fontSize: "0.875rem",
+                    borderRadius: "0.5rem",
+                    border: "1px solid #e5e7eb",
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{
+                    paddingTop: "1rem",
+                    fontSize: "0.75rem",
+                    marginTop: "0.5rem",
+                  }}
+                />
                 <Line
                   type="monotone"
                   dataKey="clicks"
                   stroke="#10b981"
                   name="Clicks"
+                  strokeWidth={2}
+                  dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="conversions"
                   stroke="#3b82f6"
                   name="Conversions"
+                  strokeWidth={2}
+                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -369,57 +375,129 @@ function DashboardPage({
         </div>
 
         {/* Graph 2: Campaign Performance (Column Graph) */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Campaign Performance
           </h3>
-          <div className="h-80">
+          <div className="h-60 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={campaignData}>
+              <BarChart
+                data={campaignData}
+                margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Bar dataKey="revenue" fill="#10b981" name="Revenue (₹)" />
-                <Bar dataKey="conversions" fill="#3b82f6" name="Conversions" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: "0.75rem" }}
+                  tickMargin={8}
+                />
+                <YAxis tick={{ fontSize: "0.75rem" }} width={40} />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  contentStyle={{
+                    fontSize: "0.875rem",
+                    borderRadius: "0.5rem",
+                    border: "1px solid #e5e7eb",
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{
+                    paddingTop: "1rem",
+                    fontSize: "0.75rem",
+                    marginTop: "0.5rem",
+                  }}
+                />
+                <Bar
+                  dataKey="revenue"
+                  fill="#10b981"
+                  name="Revenue (₹)"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="conversions"
+                  fill="#3b82f6"
+                  name="Conversions"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Graph 3: Monthly Campaign Performance (Column Graph) */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Monthly Performance
           </h3>
-          <div className="h-80">
+          <div className="h-60 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData}>
+              <BarChart
+                data={monthlyData}
+                margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="revenue" fill="#10b981" name="Revenue (₹)" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: "0.75rem" }}
+                  tickMargin={8}
+                />
+                <YAxis tick={{ fontSize: "0.75rem" }} width={40} />
+                <Tooltip
+                  contentStyle={{
+                    fontSize: "0.875rem",
+                    borderRadius: "0.5rem",
+                    border: "1px solid #e5e7eb",
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{
+                    paddingTop: "1rem",
+                    fontSize: "0.75rem",
+                    marginTop: "0.5rem",
+                  }}
+                />
+                <Bar
+                  dataKey="revenue"
+                  fill="#10b981"
+                  name="Revenue (₹)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Graph 4: Funnel Stage Performance (Column Graph) */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Funnel Stage Performance
           </h3>
-          <div className="h-80">
+          <div className="h-60 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={funnelData}>
+              <BarChart
+                data={funnelData}
+                margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="stage" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#8b5cf6" name="Count" />
+                <XAxis
+                  dataKey="stage"
+                  tick={{ fontSize: "0.75rem" }}
+                  tickMargin={8}
+                />
+                <YAxis tick={{ fontSize: "0.75rem" }} width={40} />
+                <Tooltip
+                  contentStyle={{
+                    fontSize: "0.875rem",
+                    borderRadius: "0.5rem",
+                    border: "1px solid #e5e7eb",
+                  }}
+                />
+                <Bar
+                  dataKey="value"
+                  fill="#8b5cf6"
+                  name="Count"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -427,107 +505,184 @@ function DashboardPage({
       </div>
 
       {/* Active Campaigns */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 mb-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-4 sm:p-6 mb-6">
         <div className="text-gray-900 mb-5 flex items-center justify-between">
-          <h3 className="text-lg font-bold">Active Campaigns</h3>
-          <button className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white rounded-lg px-4 py-2">
-            <Link href="/affiliate/createCampaign">Create Campaign</Link>
+          <h3 className="text-[16px] sm:text-lg font-bold">Active Campaigns</h3>
+          <button className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white rounded-lg px-2 py-1 sm:px-4 sm:py-2">
+            <Link href="/affiliate/createCampaign">
+              Create
+              <span className="hidden sm:inline"> Campaign</span>
+            </Link>
           </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/50">
-                <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Revenue
-                </th>
-                <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Conversions
-                </th>
-                <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeCampaigns.length > 0 ? (
-                activeCampaigns.map((campaign: Campaign) => (
-                  <tr
-                    key={campaign.id}
-                    className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors"
-                  >
-                    <td className="py-4 px-5 text-sm font-medium text-gray-900">
-                      {campaign.name}
-                    </td>
-                    <td className="py-4 px-5">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          campaign.status === "Active"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : campaign.status === "Paused"
-                              ? "bg-amber-100 text-amber-700"
-                              : campaign.status === "Completed"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {campaign.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-sm font-semibold text-gray-900 text-right">
-                      ₹{campaign.revenue || 0}
-                    </td>
-                    <td className="py-4 px-5 text-sm text-gray-500 text-right">
-                      {campaign.conversions || 0}
-                    </td>
-                    <td className="py-4 px-5 text-right">
-                      <button
-                        className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
-                        onClick={() => handleViewCampaign(campaign)}
-                      >
-                        View
-                      </button>
+        <div className="hidden sm:block">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50/50">
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="text-left py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Revenue
+                  </th>
+                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Conversions
+                  </th>
+                  <th className="text-right py-4 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeCampaigns.length > 0 ? (
+                  activeCampaigns.map((campaign: Campaign) => (
+                    <tr
+                      key={campaign.id}
+                      className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors"
+                    >
+                      <td className="py-4 px-5 text-sm font-medium text-gray-900">
+                        {campaign.name}
+                      </td>
+                      <td className="py-4 px-5">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            campaign.status === "Active"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : campaign.status === "Paused"
+                                ? "bg-amber-100 text-amber-700"
+                                : campaign.status === "Completed"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {campaign.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5 text-sm font-semibold text-gray-900 text-right">
+                        ₹{campaign.revenue || 0}
+                      </td>
+                      <td className="py-4 px-5 text-sm text-gray-500 text-right">
+                        {campaign.conversions || 0}
+                      </td>
+                      <td className="py-4 px-5 text-right">
+                        <button
+                          className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
+                          onClick={() => handleViewCampaign(campaign)}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center">
+                          <svg
+                            className="w-8 h-8 text-indigo-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-gray-600 font-medium">
+                          No active campaigns
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          Your active campaigns will appear here
+                        </p>
+                      </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center">
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                      <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center">
-                        <svg
-                          className="w-8 h-8 text-indigo-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M13 10V3L4 14h7v7l9-11h-7z"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-gray-600 font-medium">
-                        No active campaigns
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        Your active campaigns will appear here
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="sm:hidden space-y-4">
+          {activeCampaigns.length > 0 ? (
+            activeCampaigns.map((campaign: Campaign) => (
+              <div
+                key={campaign.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 hover:shadow-md transition-shadow"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <h4 className="font-medium text-gray-900">{campaign.name}</h4>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      campaign.status === "Active"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : campaign.status === "Paused"
+                          ? "bg-amber-100 text-amber-700"
+                          : campaign.status === "Completed"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {campaign.status}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500">Revenue</p>
+                    <p className="font-semibold">₹{campaign.revenue || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Conversions</p>
+                    <p className="font-semibold">{campaign.conversions || 0}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <button
+                    className="text-emerald-600 hover:text-emerald-700 text-sm font-medium w-full text-center "
+                    onClick={() => handleViewCampaign(campaign)}
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-8 text-center">
+              <div className="flex flex-col items-center justify-center space-y-3">
+                <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center">
+                  <svg
+                    className="w-8 h-8 text-indigo-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-gray-600 font-medium">No active campaigns</p>
+                <p className="text-sm text-gray-400">
+                  Your active campaigns will appear here
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <AnimatePresence>
@@ -1018,7 +1173,7 @@ function SettingsPage({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Full Name
@@ -1045,6 +1200,24 @@ function SettingsPage({
                 setSettingsForm({
                   ...settingsForm,
                   phoneNumber: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Phone Number"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Shop Domain
+            </label>
+            <input
+              type="text"
+              value={settingsForm.shopDomain}
+              onChange={(e) =>
+                setSettingsForm({
+                  ...settingsForm,
+                  shopDomain: e.target.value,
                 })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1158,6 +1331,11 @@ function SettingsPage({
 export default function AffiliateDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const [activePage, setActivePage] = useState("dashboard");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
   // Initialize campaigns state with data from localStorage
   const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
@@ -1226,6 +1404,7 @@ export default function AffiliateDashboard() {
   const [settingsForm, setSettingsForm] = useState({
     name: "",
     phoneNumber: "",
+    shopDomain: "",
     company: "",
     email: "",
     country: "",
@@ -1300,8 +1479,9 @@ export default function AffiliateDashboard() {
 
       // Set user settings
       setSettingsForm({
-        name: user?.name || "",
-        phoneNumber: "",
+        name: user?.user_metadata?.name || "",
+        phoneNumber: user?.user_metadata?.phone || "",
+        shopDomain: user?.user_metadata?.shop_domain || "",
         company: "",
         email: user?.email || "",
         country: "India",
@@ -1375,6 +1555,28 @@ export default function AffiliateDashboard() {
       setTimeout(() => setNotification(null), 5000);
     }
   };
+
+  // Add this useEffect hook inside your AffiliateDashboard component
+  useEffect(() => {
+    const handleResize = () => {
+      // Collapse sidebar on mobile when screen size changes to mobile
+      if (window.innerWidth < 1024) {
+        // lg breakpoint
+        setIsSidebarCollapsed(true);
+      } else {
+        setIsSidebarCollapsed(false);
+      }
+    };
+
+    // Set initial state based on screen size
+    handleResize();
+
+    // Add event listener for window resize
+    window.addEventListener("resize", handleResize);
+
+    // Clean up the event listener when component unmounts
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (authLoading || loading) {
     return (
@@ -1469,12 +1671,56 @@ export default function AffiliateDashboard() {
         )}
       </AnimatePresence>
 
+      {/* Mobile Menu Button */}
+      {/* <button
+        onClick={toggleSidebar}
+        className="lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100"
+        aria-label="Toggle menu"
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          {isSidebarCollapsed ? (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          ) : (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          )}
+        </svg>
+      </button> */}
+
+      {!isSidebarCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+
       {/* Modern Sidebar */}
       <motion.div
-        initial={{ x: -280 }}
-        animate={{ x: 0 }}
-        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        className="fixed left-0 top-0 h-full w-72 bg-white/90 backdrop-blur-2xl border-r border-gray-200/50 flex flex-col shadow-2xl shadow-gray-200/30 z-50"
+        initial={{ x: "-100%" }}
+        animate={{
+          x: isSidebarCollapsed ? "-100%" : "0",
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className={`
+    fixed left-0 top-0 h-full bg-white/95 backdrop-blur-2xl border-r border-gray-200/50 
+    flex flex-col shadow-2xl shadow-gray-200/30 z-40 overflow-hidden
+    w-72
+    ${isSidebarCollapsed ? "hidden lg:flex lg:w-20" : "w-72"}
+  `}
       >
         {/* Logo Section */}
         <div className="p-6 border-b border-gray-100/80">
@@ -1528,7 +1774,7 @@ export default function AffiliateDashboard() {
         </motion.div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-2 sm:px-4 py-6 space-y-1.5 overflow-y-auto">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-3">
             Main Menu
           </p>
@@ -1548,7 +1794,13 @@ export default function AffiliateDashboard() {
               transition={{ delay: 0.1 * index }}
               whileHover={{ x: 4 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setActivePage(item.id)}
+              onClick={() => {
+                setActivePage(item.id);
+                if (window.innerWidth < 1024) {
+                  // lg breakpoint
+                  toggleSidebar();
+                }
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 ${
                 activePage === item.id
                   ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30"
@@ -1589,7 +1841,13 @@ export default function AffiliateDashboard() {
             transition={{ delay: 0.6 }}
             whileHover={{ x: 4 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setActivePage("settings")}
+            onClick={() => {
+              setActivePage("settings");
+              if (window.innerWidth < 1024) {
+                // lg breakpoint
+                toggleSidebar();
+              }
+            }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 ${
               activePage === "settings"
                 ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30"
@@ -1610,11 +1868,11 @@ export default function AffiliateDashboard() {
         >
           <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50/80 hover:bg-gray-100/80 transition-all cursor-pointer group">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/30">
-              {user.name?.charAt(0).toUpperCase()}
+              {user?.user_metadata?.name?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-gray-900 truncate">
-                {user.name}
+                {user?.user_metadata?.name}
               </div>
               <div className="text-xs text-gray-500 truncate">{user.email}</div>
             </div>
@@ -1644,12 +1902,49 @@ export default function AffiliateDashboard() {
       </motion.div>
 
       {/* Main Content Area */}
-      <div className="ml-72 p-8">
+      <div
+        className={`transition-all duration-300 ${isSidebarCollapsed ? "lg:ml-0" : "lg:ml-72"} p-4 md:p-6 lg:p-8 mt-16 lg:mt-0`}
+      >
+        {/* Mobile Header */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-30 p-4 border-b border-gray-200 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/30">
+              {user?.user_metadata?.name?.charAt(0).toUpperCase()}
+            </div>
+            <div className="ml-3">
+              <h1 className="text-lg font-semibold text-gray-900">
+                {user?.user_metadata?.name?.split(" ")[0]}
+              </h1>
+              <p className="text-xs text-gray-500">{user.email}</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={toggleSidebar}
+              className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+              aria-label="Toggle menu"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
         {/* Top Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
+          className="hidden lg:flex items-center justify-between mb-8"
         >
           <div>
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
@@ -1716,12 +2011,14 @@ export default function AffiliateDashboard() {
               transition={{ duration: 0.3 }}
               className=""
             >
-              <div className="max-w-6xl mx-auto">
-                <CampaignsTab
-                  onSuccess={function (data: FormData): void {
-                    throw new Error("Function not implemented.");
-                  }}
-                />
+              <div className="max-w-6xl mx-auto overflow-x-auto">
+                <div className="min-w-[800px] md:min-w-0">
+                  <CampaignsTab
+                    onSuccess={function (data: FormData): void {
+                      throw new Error("Function not implemented.");
+                    }}
+                  />
+                </div>
               </div>
             </motion.div>
           )}

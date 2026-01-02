@@ -10,6 +10,11 @@ interface User {
   role: string;
   // hasAffiliate: boolean;
   profilePicture?: string;
+  user_metadata?: {
+    name?: string;
+    phone?: string;
+    shop_domain?: string;
+  };
 }
 
 interface AuthState {

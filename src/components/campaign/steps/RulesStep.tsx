@@ -53,7 +53,7 @@ export default function RulesStep({ formData, onChange }: RulesStepProps) {
                 htmlFor="after-completion"
                 className="ml-2 block text-sm text-gray-700"
               >
-                After purchase completion
+                After completion window
               </label>
             </div>
 
